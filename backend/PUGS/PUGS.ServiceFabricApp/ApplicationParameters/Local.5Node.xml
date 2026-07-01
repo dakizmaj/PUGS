@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Application Name="fabric:/PUGS.ServiceFabricApp" xmlns="http://schemas.microsoft.com/2011/01/fabric" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Parameters>
+    <Parameter Name="SharingService_ASPNETCORE_ENVIRONMENT" Value="Development" />
+    <Parameter Name="BudgetService_ASPNETCORE_ENVIRONMENT" Value="Development" />
+    <Parameter Name="TravelPlanningService_ASPNETCORE_ENVIRONMENT" Value="Development" />
+    <Parameter Name="AuthService_ASPNETCORE_ENVIRONMENT" Value="Development" />
+    <Parameter Name="ApiGateway_ASPNETCORE_ENVIRONMENT" Value="Development" />
+  </Parameters>
+</Application>
