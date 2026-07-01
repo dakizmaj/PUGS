@@ -1,12 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Microsoft.ServiceFabric.Services.Remoting;
 
 namespace PUGS.Common.Contracts
 {
-    internal class IAuthService
+    public interface IAuthService : IService
     {
+        Task<bool> ValidateUserExistsAsync(Guid userId);
+        Task<string?> GetUserRoleAsync(Guid userId);
     }
 }

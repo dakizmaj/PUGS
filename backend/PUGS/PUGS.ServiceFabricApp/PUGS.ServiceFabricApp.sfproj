@@ -39,6 +39,14 @@
     <ProjectReference Include="..\ApiGateway\ApiGateway.csproj">
       <ServiceLaunchUrl>http://localhost:{ServicePort}/swagger</ServiceLaunchUrl>
     </ProjectReference>
+    <ProjectReference Include="..\AuthService\AuthService.csproj">
+      <ServiceLaunchUrl>http://localhost:{ServicePort}/swagger</ServiceLaunchUrl>
+    </ProjectReference>
+    <ProjectReference Include="..\BudgetService\BudgetService.csproj" />
+    <ProjectReference Include="..\SharingService\SharingService.csproj">
+      <ServiceLaunchUrl>http://localhost:{ServicePort}/swagger</ServiceLaunchUrl>
+    </ProjectReference>
+    <ProjectReference Include="..\TravelPlanningService\TravelPlanningService.csproj" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
   <PropertyGroup>
