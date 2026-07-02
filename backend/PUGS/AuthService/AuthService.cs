@@ -13,6 +13,10 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using AuthService.Services;
 
 namespace AuthService
 {
@@ -51,13 +55,48 @@ namespace AuthService
                         builder.Services.AddSwaggerGen();
                         builder.Services.AddDbContext<AuthDbContext>(options =>
                             options.UseSqlServer(builder.Configuration.GetConnectionString("AuthDb")));
+
+                        // registracija TokenService-a
+                        builder.Services.AddScoped<ITokenService, TokenService>();
+
+                        builder.Services.AddControllers();
+
+                        // JWT autentikacija
+                        var jwtSettings = builder.Configuration.GetSection("Jwt");
+                        var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
+
+                        builder.Services.AddAuthentication(options =>
+                        {
+                            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                        })
+                        .AddJwtBearer(options =>
+                        {
+                            options.TokenValidationParameters = new TokenValidationParameters
+                            {
+                                ValidateIssuer = true,
+                                ValidateAudience = true,
+                                ValidateLifetime = true,
+                                ValidateIssuerSigningKey = true,
+                                ValidIssuer = jwtSettings["Issuer"],
+                                ValidAudience = jwtSettings["Audience"],
+                                IssuerSigningKey = new SymmetricSecurityKey(key)
+                            };
+                        });
+
+                        builder.Services.AddAuthorization();
+
                         var app = builder.Build();
                         if (app.Environment.IsDevelopment())
                         {
                         app.UseSwagger();
                         app.UseSwaggerUI();
                         }
+                        app.UseRouting();
+
+                        app.UseAuthentication();
                         app.UseAuthorization();
+
                         app.MapControllers();
                         
                         return app;
