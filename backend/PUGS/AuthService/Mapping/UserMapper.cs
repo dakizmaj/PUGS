@@ -15,5 +15,17 @@ namespace AuthService.Mapping
                 Role = user.Role.ToString()
             };
         }
+        public static AdminUserDto ToAdminDto(User user)
+        {
+            return new AdminUserDto
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email,
+                Role = user.Role.ToString(),
+                IsLdapUser = user.IsLdapUser,
+                CreatedAt = user.CreatedAt
+            };
+        }
     }
 }
