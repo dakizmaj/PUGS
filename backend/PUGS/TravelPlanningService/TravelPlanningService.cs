@@ -13,6 +13,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using TravelPlanningService.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace TravelPlanningService
 {
@@ -39,6 +42,29 @@ namespace TravelPlanningService
                         ServiceEventSource.Current.ServiceMessage(serviceContext, $"Starting Kestrel on {url}");
 
                         var builder = WebApplication.CreateBuilder();
+                        var jwtSettings = builder.Configuration.GetSection("Jwt");
+                        var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
+
+                        builder.Services.AddAuthentication(options =>
+                        {
+                            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                        })
+                        .AddJwtBearer(options =>
+                        {
+                            options.TokenValidationParameters = new TokenValidationParameters
+                            {
+                                ValidateIssuer = true,
+                                ValidateAudience = true,
+                                ValidateLifetime = true,
+                                ValidateIssuerSigningKey = true,
+                                ValidIssuer = jwtSettings["Issuer"],
+                                ValidAudience = jwtSettings["Audience"],
+                                IssuerSigningKey = new SymmetricSecurityKey(key)
+                            };
+                        });
+
+                        builder.Services.AddAuthorization();
 
                         builder.Services
                                     .AddSingleton<StatefulServiceContext>(serviceContext)
@@ -60,6 +86,7 @@ namespace TravelPlanningService
                         app.UseSwagger();
                         app.UseSwaggerUI();
                         }
+                        app.UseAuthentication();
                         app.UseAuthorization();
                         app.MapControllers();
                         
