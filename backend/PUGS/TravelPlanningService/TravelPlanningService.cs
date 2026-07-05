@@ -1,37 +1,46 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.ServiceFabric.Data;
 using Microsoft.ServiceFabric.Services.Communication.AspNetCore;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
+using Microsoft.ServiceFabric.Services.Remoting.FabricTransport.Runtime;
+using Microsoft.ServiceFabric.Services.Remoting.V2.FabricTransport.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
+using PUGS.Common.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Fabric;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using TravelPlanningService.Data;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using TravelPlanningService.Services;
+using Microsoft.ServiceFabric.Services.Remoting.FabricTransport;
 
 namespace TravelPlanningService
 {
-    /// <summary>
-    /// The FabricRuntime creates an instance of this class for each service type instance.
-    /// </summary>
     internal sealed class TravelPlanningService : StatefulService
     {
         public TravelPlanningService(StatefulServiceContext context)
             : base(context)
         { }
 
-        /// <summary>
-        /// Optional override to create listeners (like tcp, http) for this service instance.
-        /// </summary>
-        /// <returns>The collection of listeners.</returns>
+        private static string GetConnectionString()
+        {
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json")
+                .Build();
+
+            return configuration.GetConnectionString("TravelPlanningDb")!;
+        }
+
         protected override IEnumerable<ServiceReplicaListener> CreateServiceReplicaListeners()
         {
             return new ServiceReplicaListener[]
@@ -89,10 +98,21 @@ namespace TravelPlanningService
                         app.UseAuthentication();
                         app.UseAuthorization();
                         app.MapControllers();
-                        
+
                         return app;
 
-                    }))
+                    })),
+
+                // NOVI: Remoting listener
+                new ServiceReplicaListener(serviceContext =>
+                    new FabricTransportServiceRemotingListener(
+                        serviceContext,
+                        new TravelPlanningRemotingService(GetConnectionString()),
+                        new FabricTransportRemotingListenerSettings
+                        {
+                            EndpointResourceName = "RemotingEndpoint"
+                        }),
+                    "RemotingListener")
             };
         }
     }

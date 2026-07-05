@@ -1,13 +1,18 @@
 using BudgetService.Data;
+using BudgetService.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.ServiceFabric.Data;
 using Microsoft.ServiceFabric.Services.Communication.AspNetCore;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
+using Microsoft.ServiceFabric.Services.Remoting.FabricTransport.Runtime;
+using Microsoft.ServiceFabric.Services.Remoting.V2.FabricTransport.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
+using PUGS.Common.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Fabric;
@@ -16,22 +21,26 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.ServiceFabric.Services.Remoting.FabricTransport;
 
 namespace BudgetService
 {
-    /// <summary>
-    /// The FabricRuntime creates an instance of this class for each service type instance.
-    /// </summary>
     internal sealed class BudgetService : StatefulService
     {
         public BudgetService(StatefulServiceContext context)
             : base(context)
         { }
 
-        /// <summary>
-        /// Optional override to create listeners (like tcp, http) for this service instance.
-        /// </summary>
-        /// <returns>The collection of listeners.</returns>
+        private static string GetConnectionString()
+        {
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json")
+                .Build();
+
+            return configuration.GetConnectionString("BudgetDb")!;
+        }
+
         protected override IEnumerable<ServiceReplicaListener> CreateServiceReplicaListeners()
         {
             return new ServiceReplicaListener[]
@@ -91,10 +100,21 @@ namespace BudgetService
                         app.UseAuthentication();
                         app.UseAuthorization();
                         app.MapControllers();
-                        
+
                         return app;
 
-                    }))
+                    })),
+
+                // NOVI: Remoting listener - omogucava drugim servisima da direktno pozivaju ovaj servis
+                new ServiceReplicaListener(serviceContext =>
+                new FabricTransportServiceRemotingListener(
+                    serviceContext,
+                    new BudgetRemotingService(GetConnectionString()),
+                    new FabricTransportRemotingListenerSettings
+                    {
+                        EndpointResourceName = "RemotingListener"
+                    }),
+                "RemotingListener")
             };
         }
     }

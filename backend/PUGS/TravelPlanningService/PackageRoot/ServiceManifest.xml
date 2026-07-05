@@ -26,5 +26,9 @@
   <!-- Config package is the contents of the Config directory under PackageRoot that contains an 
        independently-updateable and versioned set of custom configuration settings for your service. -->
   <ConfigPackage Name="Config" Version="1.0.0" />
-
+	<Resources>
+		<Endpoints>
+			<Endpoint Name="RemotingListener" />
+		</Endpoints>
+	</Resources>
 </ServiceManifest>
