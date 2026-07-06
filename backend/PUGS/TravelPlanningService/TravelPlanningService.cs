@@ -22,6 +22,9 @@ using System.Threading.Tasks;
 using TravelPlanningService.Data;
 using TravelPlanningService.Services;
 using Microsoft.ServiceFabric.Services.Remoting.FabricTransport;
+using Microsoft.ServiceFabric.Services.Remoting.Client;
+using Microsoft.ServiceFabric.Services.Client;
+using PUGS.Common.Contracts;
 
 namespace TravelPlanningService
 {

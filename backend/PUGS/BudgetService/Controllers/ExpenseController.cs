@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore;
 using BudgetService.Data;
 using BudgetService.Dtos;
 using BudgetService.Mapping;
+using Microsoft.ServiceFabric.Services.Remoting.Client;
+using Microsoft.ServiceFabric.Services.Client;
+using PUGS.Common.Contracts;
 
 namespace BudgetService.Controllers
 {
@@ -60,17 +63,23 @@ namespace BudgetService.Controllers
 
             var byCategory = expenses
                 .GroupBy(e => e.Category)
-                .Select(g => new CategoryTotalDto
-                {
-                    Category = g.Key.ToString(),
-                    Total = g.Sum(e => e.Amount)
-                })
+                .Select(g => new CategoryTotalDto { Category = g.Key.ToString(), Total = g.Sum(e => e.Amount) })
                 .ToList();
 
-            // TODO: PlannedBudget treba da dodje iz Travel Planning Service-a
-            // preko Remoting poziva ITravelPlanningService.GetPlanBudgetAsync(planId)
-            // Za sad vracamo 0 dok ne povezemo servise u Delu 3.
-            var plannedBudget = 0m;
+            decimal plannedBudget;
+            try
+            {
+                var travelPlanningProxy = ServiceProxy.Create<ITravelPlanningService>(
+                    new Uri("fabric:/PUGS.ServiceFabricApp/TravelPlanningService"),
+                    new ServicePartitionKey(0)
+                );
+
+                plannedBudget = await travelPlanningProxy.GetPlanBudgetAsync(planId);
+            }
+            catch (Exception)
+            {
+                plannedBudget = 0m;
+            }
 
             return Ok(new BudgetSummaryDto
             {

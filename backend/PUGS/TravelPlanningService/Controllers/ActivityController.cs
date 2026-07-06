@@ -1,10 +1,13 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.ServiceFabric.Services.Client;
+using Microsoft.ServiceFabric.Services.Remoting.Client;
+using PUGS.Common.Contracts;
+using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using TravelPlanningService.Data;
 using TravelPlanningService.Dtos;
 using TravelPlanningService.Mapping;
@@ -137,6 +140,15 @@ namespace TravelPlanningService.Controllers
             // da automatski uracuna EstimatedCost u ukupne troskove plana (Q&A #7).
             // Za sad ostavljamo TODO, jer Budget servis jos nije implementiran.
             // TODO: emit ActivityCreatedEvent(activity.Id, planId, activity.EstimatedCost)
+            try
+            {
+                var budgetProxy = GetBudgetServiceProxy();
+                await budgetProxy.RecordActivityExpenseAsync(planId, activity.Id, activity.Name, activity.EstimatedCost, activity.Date);
+            }
+            catch (Exception)
+            {
+                // Budget servis trenutno nedostupan - aktivnost je svakako sacuvana
+            }
 
             return CreatedAtAction(nameof(GetById), new { planId, id = activity.Id },
                 ActivityMapper.ToResponseDto(activity));
@@ -168,6 +180,12 @@ namespace TravelPlanningService.Controllers
 
             // TODO: ako se EstimatedCost promenio, emitovati event ka Budget servisu
             // da azurira ukupne troskove (razlika: activity.EstimatedCost - oldCost)
+            try
+            {
+                var budgetProxy = GetBudgetServiceProxy();
+                await budgetProxy.UpdateActivityExpenseAsync(activity.Id, activity.Name, activity.EstimatedCost, activity.Date);
+            }
+            catch (Exception) { }
 
             return Ok(ActivityMapper.ToResponseDto(activity));
         }
@@ -193,8 +211,21 @@ namespace TravelPlanningService.Controllers
             await _context.SaveChangesAsync();
 
             // TODO: emit event ka Budget servisu da ukloni ovaj trosak iz obracuna
+            try
+            {
+                var budgetProxy = GetBudgetServiceProxy();
+                await budgetProxy.RemoveActivityExpenseAsync(id);
+            }
+            catch (Exception) { }
 
             return NoContent();
+        }
+        private IBudgetService GetBudgetServiceProxy()
+        {
+            return ServiceProxy.Create<IBudgetService>(
+                new Uri("fabric:/PUGS.ServiceFabricApp/BudgetService"),
+                new ServicePartitionKey(0)
+            );
         }
     }
 }
