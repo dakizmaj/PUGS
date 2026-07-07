@@ -32,7 +32,11 @@ namespace TravelPlanningService
     {
         public TravelPlanningService(StatefulServiceContext context)
             : base(context)
-        { }
+        {
+            QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+        }
+
+
 
         private static string GetConnectionString()
         {
@@ -46,6 +50,8 @@ namespace TravelPlanningService
 
         protected override IEnumerable<ServiceReplicaListener> CreateServiceReplicaListeners()
         {
+
+
             return new ServiceReplicaListener[]
             {
                 new ServiceReplicaListener(serviceContext =>

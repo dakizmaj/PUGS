@@ -79,5 +79,23 @@ namespace BudgetService.Services
             context.Expenses.Remove(expense);
             await context.SaveChangesAsync();
         }
+
+        public async Task<BudgetSummaryResult> GetBudgetSummaryAsync(Guid travelPlanId)
+        {
+            using var context = CreateContext();
+
+            var expenses = await context.Expenses
+                .Where(e => e.TravelPlanId == travelPlanId)
+                .ToListAsync();
+
+            return new BudgetSummaryResult
+            {
+                TotalSpent = expenses.Sum(e => e.Amount),
+                ByCategory = expenses
+                    .GroupBy(e => e.Category)
+                    .Select(g => new CategoryTotalResult { Category = g.Key.ToString(), Total = g.Sum(e => e.Amount) })
+                    .ToList()
+            };
+        }
     }
 }

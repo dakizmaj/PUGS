@@ -1,14 +1,16 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PUGS.Common.Contracts;
+using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using TravelPlanningService.Data;
 using TravelPlanningService.Dtos;
 using TravelPlanningService.Mapping;
 using TravelPlanningService.Models;
+using TravelPlanningService.Services;
 
 namespace TravelPlanningService.Controllers
 {
@@ -143,6 +145,59 @@ namespace TravelPlanningService.Controllers
             // povezane Destinations, Activities, ChecklistItems
 
             return NoContent();
+        }
+
+        private IBudgetService GetBudgetServiceProxy()
+        {
+            var remotingSettings = new Microsoft.ServiceFabric.Services.Remoting.FabricTransport.FabricTransportRemotingSettings { UseWrappedMessage = true };
+            var clientFactory = new Microsoft.ServiceFabric.Services.Remoting.V2.FabricTransport.Client.FabricTransportServiceRemotingClientFactory(remotingSettings);
+            var proxyFactory = new Microsoft.ServiceFabric.Services.Remoting.Client.ServiceProxyFactory((c) => clientFactory);
+
+            return proxyFactory.CreateServiceProxy<PUGS.Common.Contracts.IBudgetService>(
+                new Uri("fabric:/PUGS.ServiceFabricApp/BudgetService"),
+                new Microsoft.ServiceFabric.Services.Client.ServicePartitionKey(0),
+                listenerName: "RemotingListener"
+            );
+        }
+
+        // GET api/travel-plans/{id}/report
+        [HttpGet("{id}/report")]
+        public async Task<IActionResult> GetReport(Guid id)
+        {
+            var plan = await _context.TravelPlans
+                .Include(p => p.Destinations)
+                .Include(p => p.Activities)
+                .Include(p => p.ChecklistItems)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (plan == null)
+                return NotFound(new { message = "Plan putovanja nije pronađen." });
+
+            if (!IsAdmin() && plan.OwnerId != GetCurrentUserId())
+                return Forbid();
+
+            ExpenseSummaryForReport? budgetSummary = null;
+            try
+            {
+                var budgetProxy = GetBudgetServiceProxy();
+                var summary = await budgetProxy.GetBudgetSummaryAsync(id);
+
+                budgetSummary = new ExpenseSummaryForReport
+                {
+                    PlannedBudget = plan.Budget,
+                    TotalSpent = summary.TotalSpent,
+                    RemainingBudget = plan.Budget - summary.TotalSpent,
+                    ByCategory = summary.ByCategory.Select(c => (c.Category, c.Total)).ToList()
+                };
+            }
+            catch (Exception)
+            {
+                // Budget servis nedostupan - izvestaj se generise bez finansijskog pregleda
+            }
+
+            var pdfBytes = PdfReportGenerator.Generate(plan, budgetSummary);
+
+            return File(pdfBytes, "application/pdf", $"Izvestaj_{plan.Name.Replace(" ", "_")}.pdf");
         }
     }
 }
