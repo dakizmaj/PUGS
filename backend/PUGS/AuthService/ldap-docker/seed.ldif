@@ -1,0 +1,35 @@
+﻿dn: ou=users,dc=pugs,dc=local
+objectClass: organizationalUnit
+ou: users
+
+# Test korisnik 1 - obican korisnik
+dn: uid=marko.markovic,ou=users,dc=pugs,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: marko.markovic
+cn: Marko Markovic
+sn: Markovic
+givenName: Marko
+mail: marko.markovic@pugs.local
+uidNumber: 10001
+gidNumber: 10001
+homeDirectory: /home/marko.markovic
+loginShell: /bin/bash
+userPassword: {SSHA}VQ3q6Ybq12CBtcWwaCTGxMPopn8AOd1U
+
+# Test korisnik 2 - admin
+dn: uid=ana.admin,ou=users,dc=pugs,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: ana.admin
+cn: Ana Adminovic
+sn: Adminovic
+givenName: Ana
+mail: ana.admin@pugs.local
+uidNumber: 10002
+gidNumber: 10002
+homeDirectory: /home/ana.admin
+loginShell: /bin/bash
+userPassword: {SSHA}vEZjnxcO2pYx1cHJgxc74Oy6i1X58NM8

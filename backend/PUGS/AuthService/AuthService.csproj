@@ -29,10 +29,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Ldap\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\PUGS.Common\PUGS.Common.csproj" />
   </ItemGroup>
 

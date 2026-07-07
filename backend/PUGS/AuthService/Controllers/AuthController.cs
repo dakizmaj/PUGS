@@ -8,6 +8,7 @@ using AuthService.Models;
 using AuthService.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AuthService.Ldap;
 
 namespace AuthService.Controllers
 {
@@ -17,11 +18,13 @@ namespace AuthService.Controllers
     {
         private readonly AuthDbContext _context;
         private readonly ITokenService _tokenService;
+        private readonly ILdapAuthenticationService _ldapService;
 
-        public AuthController(AuthDbContext context, ITokenService tokenService)
+        public AuthController(AuthDbContext context, ITokenService tokenService, ILdapAuthenticationService ldapService)
         {
             _context = context;
             _tokenService = tokenService;
+            _ldapService = ldapService;
         }
 
         [HttpPost("register")]
@@ -91,6 +94,49 @@ namespace AuthService.Controllers
                 return NotFound();
 
             return Ok(UserMapper.ToResponseDto(user));
+        }
+
+        [HttpPost("ldap-login")]
+        public async Task<ActionResult<AuthResponseDto>> LdapLogin(LdapLoginDto dto)
+        {
+            var ldapUser = await _ldapService.AuthenticateAsync(dto.Username, dto.Password);
+
+            if (ldapUser == null)
+                return Unauthorized(new { message = "Neispravno korisničko ime ili lozinka (LDAP)." });
+
+            // Trazimo postojeci lokalni nalog po email-u
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == ldapUser.Email.ToLower());
+
+            if (user == null)
+            {
+                // Prvi LDAP login ovog korisnika - kreiramo lokalni nalog automatski
+                user = new User
+                {
+                    Name = ldapUser.CommonName,
+                    Email = ldapUser.Email,
+                    PasswordHash = string.Empty, // LDAP korisnici nemaju lokalnu lozinku
+                    IsLdapUser = true,
+                    Role = UserRole.User // Default rola - administrator moze kasnije promeniti preko admin panela
+                };
+
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+            }
+            else if (!user.IsLdapUser)
+            {
+                // Edge slucaj: email vec postoji kao obican (ne-LDAP) nalog.
+                // Odlucujemo da odbijemo LDAP login da ne bismo "preoteli" tudji lokalni nalog.
+                return Conflict(new { message = "Nalog sa ovim email-om već postoji kao lokalni (ne-LDAP) nalog." });
+            }
+
+            var token = _tokenService.GenerateToken(user);
+
+            return Ok(new AuthResponseDto
+            {
+                Token = token,
+                User = UserMapper.ToResponseDto(user)
+            });
         }
     }
 }

@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using AuthService.Services;
+using AuthService.Ldap;
 
 namespace AuthService
 {
@@ -58,6 +59,8 @@ namespace AuthService
 
                         // registracija TokenService-a
                         builder.Services.AddScoped<ITokenService, TokenService>();
+
+                        builder.Services.AddScoped<ILdapAuthenticationService, LdapAuthenticationService>();
 
                         builder.Services.AddControllers();
 
