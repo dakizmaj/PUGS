@@ -113,7 +113,8 @@ namespace TravelPlanningService
                         new TravelPlanningRemotingService(GetConnectionString()),
                         new FabricTransportRemotingListenerSettings
                         {
-                            EndpointResourceName = "RemotingEndpoint"
+                            EndpointResourceName = "RemotingListener",
+                            UseWrappedMessage = true
                         }),
                     "RemotingListener")
             };

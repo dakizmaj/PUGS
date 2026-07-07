@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using TravelPlanningService.Data;
 using TravelPlanningService.Dtos;
 using TravelPlanningService.Mapping;
+using Microsoft.ServiceFabric.Services.Remoting.V2.FabricTransport.Client;
+using Microsoft.ServiceFabric.Services.Remoting.FabricTransport;
 
 namespace TravelPlanningService.Controllers
 {
@@ -222,9 +224,18 @@ namespace TravelPlanningService.Controllers
         }
         private IBudgetService GetBudgetServiceProxy()
         {
-            return ServiceProxy.Create<IBudgetService>(
+            var remotingSettings = new FabricTransportRemotingSettings
+            {
+                UseWrappedMessage = true
+            };
+
+            var clientFactory = new FabricTransportServiceRemotingClientFactory(remotingSettings);
+            var proxyFactory = new ServiceProxyFactory((c) => clientFactory);
+
+            return proxyFactory.CreateServiceProxy<IBudgetService>(
                 new Uri("fabric:/PUGS.ServiceFabricApp/BudgetService"),
-                new ServicePartitionKey(0)
+                new ServicePartitionKey(0),
+                listenerName: "RemotingListener"
             );
         }
     }

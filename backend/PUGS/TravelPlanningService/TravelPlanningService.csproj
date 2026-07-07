@@ -22,6 +22,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.ServiceFabric.AspNetCore.Kestrel" Version="8.4.205-rc" />
+    <PackageReference Include="Microsoft.ServiceFabric.Services" Version="8.5.116" />
     <PackageReference Include="Microsoft.ServiceFabric.Services.Remoting" Version="8.5.116" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>

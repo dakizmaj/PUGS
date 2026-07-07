@@ -107,14 +107,15 @@ namespace BudgetService
 
                 // NOVI: Remoting listener - omogucava drugim servisima da direktno pozivaju ovaj servis
                 new ServiceReplicaListener(serviceContext =>
-                new FabricTransportServiceRemotingListener(
-                    serviceContext,
-                    new BudgetRemotingService(GetConnectionString()),
-                    new FabricTransportRemotingListenerSettings
-                    {
-                        EndpointResourceName = "RemotingListener"
-                    }),
-                "RemotingListener")
+                    new FabricTransportServiceRemotingListener(
+                        serviceContext,
+                        new BudgetRemotingService(GetConnectionString()),
+                        new FabricTransportRemotingListenerSettings
+                        {
+                            EndpointResourceName = "RemotingListener",
+                            UseWrappedMessage = true
+                        }),
+                    "RemotingListener")
             };
         }
     }

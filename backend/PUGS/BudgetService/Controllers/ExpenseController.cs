@@ -10,6 +10,8 @@ using BudgetService.Mapping;
 using Microsoft.ServiceFabric.Services.Remoting.Client;
 using Microsoft.ServiceFabric.Services.Client;
 using PUGS.Common.Contracts;
+using Microsoft.ServiceFabric.Services.Remoting.V2.FabricTransport.Client;
+using Microsoft.ServiceFabric.Services.Remoting.FabricTransport;
 
 namespace BudgetService.Controllers
 {
@@ -69,9 +71,18 @@ namespace BudgetService.Controllers
             decimal plannedBudget;
             try
             {
-                var travelPlanningProxy = ServiceProxy.Create<ITravelPlanningService>(
+                var remotingSettings = new FabricTransportRemotingSettings
+                {
+                    UseWrappedMessage = true
+                };
+
+                var clientFactory = new FabricTransportServiceRemotingClientFactory(remotingSettings);
+                var proxyFactory = new ServiceProxyFactory((c) => clientFactory);
+
+                var travelPlanningProxy = proxyFactory.CreateServiceProxy<ITravelPlanningService>(
                     new Uri("fabric:/PUGS.ServiceFabricApp/TravelPlanningService"),
-                    new ServicePartitionKey(0)
+                    new ServicePartitionKey(0),
+                    listenerName: "RemotingListener"
                 );
 
                 plannedBudget = await travelPlanningProxy.GetPlanBudgetAsync(planId);
