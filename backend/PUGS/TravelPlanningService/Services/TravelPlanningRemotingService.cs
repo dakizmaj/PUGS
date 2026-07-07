@@ -34,5 +34,11 @@ namespace TravelPlanningService.Services
             var plan = await context.TravelPlans.FindAsync(planId);
             return plan?.Budget ?? 0m;
         }
+        public async Task<Guid?> GetPlanOwnerIdAsync(Guid planId)
+        {
+            using var context = CreateContext();
+            var plan = await context.TravelPlans.FindAsync(planId);
+            return plan?.OwnerId;
+        }
     }
 }

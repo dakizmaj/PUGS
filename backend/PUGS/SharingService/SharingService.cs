@@ -1,16 +1,21 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.ServiceFabric.Data;
+using Microsoft.ServiceFabric.Services.Communication.AspNetCore;
+using Microsoft.ServiceFabric.Services.Communication.Runtime;
+using Microsoft.ServiceFabric.Services.Runtime;
+using SharingService.Data;
 using System;
 using System.Collections.Generic;
 using System.Fabric;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.ServiceFabric.Services.Communication.AspNetCore;
-using Microsoft.ServiceFabric.Services.Communication.Runtime;
-using Microsoft.ServiceFabric.Services.Runtime;
-using Microsoft.ServiceFabric.Data;
 
 namespace SharingService
 {
@@ -38,6 +43,30 @@ namespace SharingService
 
                         var builder = WebApplication.CreateBuilder();
 
+                        var jwtSettings = builder.Configuration.GetSection("Jwt");
+                        var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
+
+                        builder.Services.AddAuthentication(options =>
+                        {
+                            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                        })
+                        .AddJwtBearer(options =>
+                        {
+                            options.TokenValidationParameters = new TokenValidationParameters
+                            {
+                                ValidateIssuer = true,
+                                ValidateAudience = true,
+                                ValidateLifetime = true,
+                                ValidateIssuerSigningKey = true,
+                                ValidIssuer = jwtSettings["Issuer"],
+                                ValidAudience = jwtSettings["Audience"],
+                                IssuerSigningKey = new SymmetricSecurityKey(key)
+                            };
+                        });
+
+                        builder.Services.AddAuthorization();
+
                         builder.Services.AddSingleton<StatelessServiceContext>(serviceContext);
                         builder.WebHost
                                     .UseKestrel()
@@ -47,12 +76,17 @@ namespace SharingService
                         builder.Services.AddControllers();
                         builder.Services.AddEndpointsApiExplorer();
                         builder.Services.AddSwaggerGen();
+                        
+                        builder.Services.AddDbContext<SharingDbContext>(options =>
+                            options.UseSqlServer(builder.Configuration.GetConnectionString("SharingDb")));
+
                         var app = builder.Build();
                         if (app.Environment.IsDevelopment())
                         {
                         app.UseSwagger();
                         app.UseSwaggerUI();
                         }
+                        app.UseAuthentication();
                         app.UseAuthorization();
                         app.MapControllers();
                         
