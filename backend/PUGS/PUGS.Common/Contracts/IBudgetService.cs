@@ -23,5 +23,6 @@ namespace PUGS.Common.Contracts
         Task UpdateActivityExpenseAsync(Guid activityId, string activityName, decimal newEstimatedCost, DateTime activityDate);
         Task RemoveActivityExpenseAsync(Guid activityId);
         Task<BudgetSummaryResult> GetBudgetSummaryAsync(Guid travelPlanId);
+        Task DeleteAllExpensesForPlanAsync(Guid travelPlanId);
     }
 }

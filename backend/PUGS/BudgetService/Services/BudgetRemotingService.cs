@@ -97,5 +97,17 @@ namespace BudgetService.Services
                     .ToList()
             };
         }
+
+        public async Task DeleteAllExpensesForPlanAsync(Guid travelPlanId)
+        {
+            using var context = CreateContext();
+
+            var expenses = await context.Expenses
+                .Where(e => e.TravelPlanId == travelPlanId)
+                .ToListAsync();
+
+            context.Expenses.RemoveRange(expenses);
+            await context.SaveChangesAsync();
+        }
     }
 }

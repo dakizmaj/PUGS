@@ -9,5 +9,6 @@ namespace PUGS.Common.Contracts
         Task<bool> PlanExistsAsync(Guid planId);
         Task<decimal> GetPlanBudgetAsync(Guid planId);
         Task<Guid?> GetPlanOwnerIdAsync(Guid planId);
+        Task DeleteAllPlansForUserAsync(Guid userId);
     }
 }

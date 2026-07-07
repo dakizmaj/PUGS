@@ -8,6 +8,11 @@ using AuthService.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.ServiceFabric.Services.Client;
+using Microsoft.ServiceFabric.Services.Remoting.Client;
+using Microsoft.ServiceFabric.Services.Remoting.FabricTransport;
+using Microsoft.ServiceFabric.Services.Remoting.V2.FabricTransport.Client;
+using PUGS.Common.Contracts;
 
 namespace AuthService.Controllers
 {
@@ -63,10 +68,17 @@ namespace AuthService.Controllers
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
 
-            // TODO: Kada Travel Planning Service bude implementiran, ovde pozvati
-            // ITravelPlanningService.DeleteAllPlansForUserAsync(id) preko Remoting-a,
-            // ili emitovati UserDeletedEvent koji Travel Planning servis sluša (event-driven pristup).
-            // Ovo je zahtev iz specifikacije: brisanje korisnika mora obrisati i njegove planove.
+            try
+            {
+                var travelPlanningProxy = GetTravelPlanningProxy();
+                await travelPlanningProxy.DeleteAllPlansForUserAsync(id);
+            }
+            catch (Exception)
+            {
+                // Travel Planning servis nedostupan - korisnik je svakako obrisan,
+                // njegovi planovi ce ostati dok se servis ne vrati u funkciju
+                // (razmisliti kasnije o retry mehanizmu za produkcijski kvalitet)
+            }
 
             return NoContent();
         }
@@ -87,6 +99,18 @@ namespace AuthService.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(UserMapper.ToAdminDto(user));
+        }
+        private ITravelPlanningService GetTravelPlanningProxy()
+        {
+            var remotingSettings = new FabricTransportRemotingSettings { UseWrappedMessage = true };
+            var clientFactory = new FabricTransportServiceRemotingClientFactory(remotingSettings);
+            var proxyFactory = new ServiceProxyFactory((c) => clientFactory);
+
+            return proxyFactory.CreateServiceProxy<ITravelPlanningService>(
+                new Uri("fabric:/PUGS.ServiceFabricApp/TravelPlanningService"),
+                new ServicePartitionKey(0),
+                listenerName: "RemotingListener"
+            );
         }
     }
 }

@@ -135,9 +135,18 @@ namespace TravelPlanningService.Controllers
             if (plan == null)
                 return NotFound(new { message = "Plan putovanja nije pronađen." });
 
-            // Admin moze da obrise plan bilo kog korisnika (Q&A #1, #5)
             if (!IsAdmin() && plan.OwnerId != GetCurrentUserId())
                 return Forbid();
+
+            try
+            {
+                var budgetProxy = GetBudgetServiceProxy();
+                await budgetProxy.DeleteAllExpensesForPlanAsync(id);
+            }
+            catch (Exception)
+            {
+                // Budget servis nedostupan - nastavljamo brisanje plana i pored toga
+            }
 
             _context.TravelPlans.Remove(plan);
             await _context.SaveChangesAsync();
