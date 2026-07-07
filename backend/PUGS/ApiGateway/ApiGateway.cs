@@ -11,6 +11,7 @@ using Microsoft.ServiceFabric.Services.Communication.AspNetCore;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
 using Microsoft.ServiceFabric.Data;
+using Yarp.ReverseProxy;
 
 namespace ApiGateway
 {
@@ -35,9 +36,7 @@ namespace ApiGateway
                     new KestrelCommunicationListener(serviceContext, "ServiceEndpoint", (url, listener) =>
                     {
                         ServiceEventSource.Current.ServiceMessage(serviceContext, $"Starting Kestrel on {url}");
-
                         var builder = WebApplication.CreateBuilder();
-
                         builder.Services.AddSingleton<StatelessServiceContext>(serviceContext);
                         builder.WebHost
                                     .UseKestrel()
@@ -47,17 +46,33 @@ namespace ApiGateway
                         builder.Services.AddControllers();
                         builder.Services.AddEndpointsApiExplorer();
                         builder.Services.AddSwaggerGen();
+
+                        builder.Services.AddReverseProxy()
+                            .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+
+                        builder.Services.AddCors(options =>
+                        {
+                            options.AddPolicy("AllowFrontend", policy =>
+                            {
+                                policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
+                                      .AllowAnyHeader()
+                                      .AllowAnyMethod();
+                            });
+                        });
+
                         var app = builder.Build();
                         if (app.Environment.IsDevelopment())
                         {
                         app.UseSwagger();
                         app.UseSwaggerUI();
                         }
+
+                        app.UseCors("AllowFrontend");
                         app.UseAuthorization();
                         app.MapControllers();
-                        
-                        return app;
+                        app.MapReverseProxy();
 
+                        return app;
                     }))
             };
         }
