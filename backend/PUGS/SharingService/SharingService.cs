@@ -1,13 +1,19 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.ServiceFabric.Data;
 using Microsoft.ServiceFabric.Services.Communication.AspNetCore;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
+using Microsoft.ServiceFabric.Services.Remoting.FabricTransport;
+using Microsoft.ServiceFabric.Services.Remoting.FabricTransport.Runtime;
+using Microsoft.ServiceFabric.Services.Remoting.V2.FabricTransport.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
+using PUGS.Common.Contracts;
 using SharingService.Data;
+using SharingService.Services;
 using System;
 using System.Collections.Generic;
 using System.Fabric;
@@ -27,6 +33,16 @@ namespace SharingService
         public SharingService(StatelessServiceContext context)
             : base(context)
         { }
+
+        private static string GetConnectionString()
+        {
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json")
+                .Build();
+
+            return configuration.GetConnectionString("SharingDb")!;
+        }
 
         /// <summary>
         /// Optional override to create listeners (like tcp, http) for this service instance.
@@ -76,7 +92,7 @@ namespace SharingService
                         builder.Services.AddControllers();
                         builder.Services.AddEndpointsApiExplorer();
                         builder.Services.AddSwaggerGen();
-                        
+
                         builder.Services.AddDbContext<SharingDbContext>(options =>
                             options.UseSqlServer(builder.Configuration.GetConnectionString("SharingDb")));
 
@@ -89,10 +105,22 @@ namespace SharingService
                         app.UseAuthentication();
                         app.UseAuthorization();
                         app.MapControllers();
-                        
+
                         return app;
 
-                    }))
+                    })),
+
+                // NOVI: Remoting listener - omogucava Travel Planning servisu da poziva ValidateTokenAsync
+                new ServiceInstanceListener(serviceContext =>
+                    new FabricTransportServiceRemotingListener(
+                        serviceContext,
+                        new SharingRemotingService(GetConnectionString()),
+                        new FabricTransportRemotingListenerSettings
+                        {
+                            EndpointResourceName = "RemotingListener",
+                            UseWrappedMessage = true
+                        }),
+                    "RemotingListener")
             };
         }
     }
