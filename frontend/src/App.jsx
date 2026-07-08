@@ -1,15 +1,37 @@
-import { useAuth } from './context/AuthContext';
+import { Routes, Route } from 'react-router-dom';
+import { Navbar } from './components/layout/Navbar';
+import { ProtectedRoute } from './components/layout/ProtectedRoute';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { AdminPage } from './pages/AdminPage';
+import { TravelPlanDetailPage } from './pages/TravelPlanDetailPage';
 
 function App() {
-  const { user, loading } = useAuth();
-
-  if (loading) return <div>Učitavanje...</div>;
-
   return (
-    <div>
-      <h1>PUGS Frontend Setup OK</h1>
-      <p>Trenutno ulogovan korisnik: {user ? user.name : 'niko'}</p>
-    </div>
+    <>
+      <Navbar />
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute adminOnly>
+              <AdminPage />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </>
   );
 }
 
