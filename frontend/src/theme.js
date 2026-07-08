@@ -17,6 +17,24 @@ export const theme = createTheme({
             main: '#2E7D32',
         },
         error: {
+            main: '#C62828',
+        },
+        warning: {
+            main: '#EF6C00',
+        },
+        info: {
+            main: '#0277BD',
+        },
+        background: {
+            default: '#F4F6F8',   // svetlo siva pozadina - jasnije odvaja kartice od pozadine
+            paper: '#FFFFFF',
+        },
+        text: {
+            primary: '#1A1A1A',
+            secondary: '#5F6368',
+        },
+    },
+    shape: {
         borderRadius: 8,
     },
     typography: {
