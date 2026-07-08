@@ -25,7 +25,7 @@ export function Navbar() {
 
         {user ? (
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <Typography variant="body2">{user.name}</Typography>
+            <Typography variant="body2" sx={{ fontWeight: 600, opacity: 0.95 }}>{user.name}</Typography>
             {user.isAdmin() && (
               <Button color="inherit" onClick={() => navigate('/admin')}>
                 Admin

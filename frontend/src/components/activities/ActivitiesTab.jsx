@@ -12,7 +12,7 @@ import { activityApi } from '../../api/activityApi';
 import { ACTIVITY_STATUSES, ACTIVITY_STATUS_LABELS } from '../../models/Activity';
 
 const STATUS_COLORS = {
-  Planned: 'default',
+  Planned: 'warning',
   Reserved: 'info',
   Completed: 'success',
   Cancelled: 'error',
@@ -120,7 +120,7 @@ export function ActivitiesTab({ planId }) {
                   </Typography>
                   {activity.location && <Typography variant="body2" color="text.secondary">{activity.location}</Typography>}
                   <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-                    <Chip label={ACTIVITY_STATUS_LABELS[activity.status]} size="small" color={STATUS_COLORS[activity.status]} />
+                    <Chip label={ACTIVITY_STATUS_LABELS[activity.status]} size="small" color={STATUS_COLORS[activity.status]} variant="filled" />
                     <Chip label={`${activity.estimatedCost} RSD`} size="small" variant="outlined" />
                   </Box>
                 </Box>
