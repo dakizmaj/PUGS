@@ -6,6 +6,7 @@ import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { AdminPage } from './pages/AdminPage';
 import { TravelPlanDetailPage } from './pages/TravelPlanDetailPage';
+import { SharedPlanPage } from './pages/SharedPlanPage';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/shared/:token" element={<SharedPlanPage />} />
         <Route
           path="/"
           element={
