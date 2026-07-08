@@ -23,6 +23,14 @@ function App() {
           }
         />
         <Route
+          path="/plans/:id"
+          element={
+            <ProtectedRoute>
+              <TravelPlanDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/admin"
           element={
             <ProtectedRoute adminOnly>
